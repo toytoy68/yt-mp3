@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Thème natif du téléphone, clair ou sombre selon le réglage système -->
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.DayNight" />
+    <color name="icon_background">#D32F2F</color>
+</resources>

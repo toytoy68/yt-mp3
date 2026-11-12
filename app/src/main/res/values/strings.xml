@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">YT MP3</string>
+    <string name="intro">Colle le lien d\'une vidéo, choisis le nom du fichier, et récupère ta piste MP3.</string>
+    <string name="label_url">Lien de la vidéo</string>
+    <string name="hint_url">https://youtu.be/…</string>
+    <string name="paste">Coller</string>
+    <string name="fetch_title">Utiliser le titre de la vidéo</string>
+    <string name="label_filename">Nom du fichier</string>
+    <string name="hint_filename">Laisse vide pour utiliser le titre</string>
+    <string name="mp3_suffix">.mp3</string>
+    <string name="label_quality">Qualité</string>
+    <string name="q128">128 kbps</string>
+    <string name="q192">192 kbps</string>
+    <string name="q320">320 kbps</string>
+    <string name="extract">Extraire en MP3</string>
+    <string name="cancel">Annuler</string>
+    <string name="open">Écouter</string>
+    <string name="update_engine">Mettre à jour le moteur</string>
+    <string name="save_location">Les fichiers sont enregistrés dans Musique/YtMp3.</string>
+</resources>

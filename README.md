@@ -4,7 +4,8 @@ Colle le lien d'une vidéo (ou partage-la depuis l'appli YouTube), choisis le no
 
 - Nom du fichier modifiable avant la création (vide = titre de la vidéo, bouton « Utiliser le titre de la vidéo » pour le pré-remplir)
 - Qualité 128 / 192 / 320 kbps
-- Barre de progression et bouton Annuler
+- Barres d'avancement du téléchargement et de la conversion MP3
+- Continue en arrière-plan (notification avec progression et bouton Annuler)
 - « Partager → YT MP3 » depuis l'appli YouTube
 - Mise à jour automatique du moteur yt-dlp (1×/jour) + bouton manuel
 - Android 10 ou plus récent

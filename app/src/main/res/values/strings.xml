@@ -18,4 +18,7 @@
     <string name="open">Écouter</string>
     <string name="update_engine">Mettre à jour le moteur</string>
     <string name="save_location">Les fichiers sont enregistrés dans Musique/YtMp3.</string>
+    <string name="label_download">Téléchargement</string>
+    <string name="label_convert">Conversion MP3</string>
+    <string name="background_hint">Tu peux changer d\'appli : l\'extraction continue (voir la notification).</string>
 </resources>

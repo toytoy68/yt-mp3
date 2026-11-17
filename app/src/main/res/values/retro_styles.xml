@@ -16,7 +16,7 @@
         <item name="android:background">@drawable/retro_button</item>
         <item name="android:scaleType">centerInside</item>
         <item name="android:padding">7dp</item>
-        <item name="android:tint">@color/lcd_dim</item>
+        <item name="android:tint">@color/led_off</item>
     </style>
 
     <style name="RetroToggleText">
@@ -29,7 +29,7 @@
         <item name="android:paddingTop">3dp</item>
         <item name="android:paddingBottom">3dp</item>
         <item name="android:textSize">18sp</item>
-        <item name="android:textColor">@color/lcd_dim</item>
+        <item name="android:textColor">@color/led_off</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
     </style>

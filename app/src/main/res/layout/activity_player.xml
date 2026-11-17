@@ -99,22 +99,16 @@
         </LinearLayout>
 
         <!-- Titre défilant -->
-        <TextView
+        <fr.perso.ytmp3.player.MarqueeView
             android:id="@+id/marquee"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:background="@drawable/retro_sunken"
-            android:ellipsize="marquee"
-            android:fontFamily="@font/vt323"
-            android:marqueeRepeatLimit="marquee_forever"
             android:paddingStart="8dp"
             android:paddingTop="2dp"
             android:paddingEnd="8dp"
-            android:paddingBottom="2dp"
-            android:singleLine="true"
-            android:textColor="@color/lcd_green"
-            android:textSize="22sp" />
+            android:paddingBottom="2dp" />
 
         <!-- Infos techniques -->
         <TextView

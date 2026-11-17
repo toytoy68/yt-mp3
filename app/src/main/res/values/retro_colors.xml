@@ -9,6 +9,7 @@
     <color name="lcd_bg">#030A05</color>
     <color name="lcd_green">#3DFF72</color>
     <color name="lcd_dim">#145C28</color>
+    <color name="led_off">#2F8048</color>
     <color name="amber">#FFB224</color>
     <color name="label">#AEB4C8</color>
     <color name="select_bg">#1C3C8C</color>

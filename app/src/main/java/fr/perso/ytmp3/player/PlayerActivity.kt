@@ -1,20 +1,29 @@
 package fr.perso.ytmp3.player
 
 import android.app.Activity
+import android.app.AlertDialog
+import android.app.RecoverableSecurityException
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
+import android.text.InputType
 import android.view.Choreographer
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
+import android.widget.EditText
 import android.widget.BaseAdapter
 import android.widget.ImageButton
 import android.widget.ListView
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
+import fr.perso.ytmp3.ExtractService
 import fr.perso.ytmp3.R
 import java.util.concurrent.Executors
 
@@ -23,6 +32,9 @@ class PlayerActivity : Activity() {
 
     companion object {
         private const val EXTRA_PLAY_URI = "play_uri"
+        private const val REQUEST_PERMISSION = 1
+        private const val STATE_EQ = "eq_visible"
+        private const val STATE_LIST = "list_visible"
 
         /** Ouvre le lecteur ; si [playUri] est donné, lance ce morceau. */
         fun open(context: Context, playUri: Uri? = null) {
@@ -46,12 +58,15 @@ class PlayerActivity : Activity() {
     private var showRemaining = false
     private var seeking = false
     private var infoForUri: Uri? = null
+    /** Action à rejouer quand Android a accordé l'accès à un fichier (renommer/supprimer). */
+    private var pendingFileAction: (() -> Unit)? = null
     private val levels = FloatArray(SpectrumAnalyzer.BANDS)
     private val stateListener: (PlayerState.Snapshot) -> Unit = { render(it) }
 
     private lateinit var timeText: TextView
     private lateinit var stateIcon: TextView
-    private lateinit var marquee: TextView
+    private lateinit var marquee: MarqueeView
+    private lateinit var playButton: ImageButton
     private lateinit var infoText: TextView
     private lateinit var spectrum: SpectrumView
     private lateinit var seekBar: SeekBar
@@ -101,11 +116,11 @@ class PlayerActivity : Activity() {
         listEmpty = findViewById(R.id.listEmpty)
         listHeader = findViewById(R.id.listHeader)
 
-        marquee.isSelected = true // nécessaire pour que le titre défile
+        playButton = findViewById(R.id.play)
         listView.adapter = adapter
 
         findViewById<View>(R.id.back).setOnClickListener { finish() }
-        findViewById<View>(R.id.play).setOnClickListener { onPlayPressed() }
+        playButton.setOnClickListener { onPlayPressed() }
         findViewById<View>(R.id.pause).setOnClickListener { PlayerService.instance?.togglePause() }
         findViewById<View>(R.id.stop).setOnClickListener { PlayerService.instance?.stopPlayback() }
         findViewById<View>(R.id.next).setOnClickListener { skip(+1) }
@@ -117,6 +132,10 @@ class PlayerActivity : Activity() {
 
         listView.setOnItemClickListener { _, _, position, _ ->
             PlayerService.play(this, library, position)
+        }
+        listView.setOnItemLongClickListener { _, _, position, _ ->
+            library.getOrNull(position)?.let { showTrackMenu(it) }
+            true
         }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -170,7 +189,20 @@ class PlayerActivity : Activity() {
         findViewById<View>(R.id.eqReset).setOnClickListener { eqView.resetLevels() }
         eqView.onChange = { band, level -> PlayerService.instance?.setEqLevel(band, level) }
 
-        handleIntent(intent)
+        if (savedInstanceState != null) {
+            // Rotation : on garde les panneaux ouverts, sans relancer le morceau demandé.
+            eqPanel.visibility = if (savedInstanceState.getBoolean(STATE_EQ)) View.VISIBLE else View.GONE
+            listPanel.visibility = if (savedInstanceState.getBoolean(STATE_LIST, true)) View.VISIBLE else View.INVISIBLE
+            setupEqualizer()
+        } else {
+            handleIntent(intent)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_EQ, eqPanel.visibility == View.VISIBLE)
+        outState.putBoolean(STATE_LIST, listPanel.visibility == View.VISIBLE)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -187,6 +219,7 @@ class PlayerActivity : Activity() {
     }
 
     override fun onStop() {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         Choreographer.getInstance().removeFrameCallback(frameCallback)
         PlayerState.removeListener(stateListener)
         super.onStop()
@@ -219,10 +252,18 @@ class PlayerActivity : Activity() {
                 listEmpty.visibility = if (empty) View.VISIBLE else View.GONE
                 val total = tracks.sumOf { it.durationMs }
                 listHeader.text = "LISTE DE LECTURE · ${tracks.size} morceau${if (tracks.size > 1) "x" else ""} · ${formatTime(total)}"
+                syncQueue(tracks)
                 playPendingIfAny()
                 render(PlayerState.current)
             }
         }
+    }
+
+    /** La liste a changé (renommage, suppression, nouveau MP3) : on met la file de lecture à jour. */
+    private fun syncQueue(tracks: List<Track>) {
+        val current = PlayerState.current.track ?: return
+        val index = tracks.indexOfFirst { it.uri == current.uri }
+        if (index >= 0) PlayerState.update { it.copy(queue = tracks, index = index) }
     }
 
     private fun playPendingIfAny() {
@@ -265,8 +306,11 @@ class PlayerActivity : Activity() {
         val track = s.track
         val number = if (track != null) "${s.index + 1}. " else ""
         val title = track?.title ?: "YT MP3 · prêt"
-        val newText = "$number$title  ***  "
-        if (marquee.text.toString() != newText) marquee.text = newText
+        marquee.setText("$number$title  ***")
+
+        // Écran allumé tant que la musique joue sur cet écran (veille normale en pause).
+        if (s.playing) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         stateIcon.text = when {
             s.playing -> "▶ LECTURE"
@@ -289,12 +333,13 @@ class PlayerActivity : Activity() {
     private fun renderToggles() {
         val s = PlayerState.current
         val on = ColorStateList.valueOf(getColor(R.color.lcd_green))
-        val off = ColorStateList.valueOf(getColor(R.color.lcd_dim))
+        val off = ColorStateList.valueOf(getColor(R.color.led_off))
+        playButton.imageTintList = ColorStateList.valueOf(getColor(if (s.playing) R.color.lcd_green else R.color.label))
         shuffleButton.imageTintList = if (s.shuffle) on else off
         repeatButton.imageTintList = if (s.repeat) on else off
-        eqToggle.setTextColor(getColor(if (eqPanel.visibility == View.VISIBLE) R.color.lcd_green else R.color.lcd_dim))
-        listToggle.setTextColor(getColor(if (listPanel.visibility == View.VISIBLE) R.color.lcd_green else R.color.lcd_dim))
-        eqOn.setTextColor(getColor(if (PlayerService.instance?.eqEnabled == true) R.color.lcd_green else R.color.lcd_dim))
+        eqToggle.setTextColor(getColor(if (eqPanel.visibility == View.VISIBLE) R.color.lcd_green else R.color.led_off))
+        listToggle.setTextColor(getColor(if (listPanel.visibility == View.VISIBLE) R.color.lcd_green else R.color.led_off))
+        eqOn.setTextColor(getColor(if (PlayerService.instance?.eqEnabled == true) R.color.lcd_green else R.color.led_off))
     }
 
     /** Débit et fréquence d'échantillonnage, lus dans le fichier. */
@@ -367,6 +412,104 @@ class PlayerActivity : Activity() {
             (System.currentTimeMillis() / 500) % 2 == 0L
         ) 0.25f else 1f
     }
+
+    // ---------------------------------------------------------------- renommer / supprimer
+
+    private fun showTrackMenu(track: Track) {
+        AlertDialog.Builder(this)
+            .setTitle(track.title)
+            .setItems(arrayOf("Renommer", "Supprimer")) { _, which ->
+                if (which == 0) askRename(track) else askDelete(track)
+            }
+            .show()
+    }
+
+    private fun askRename(track: Track) {
+        val input = EditText(this).apply {
+            setText(track.title)
+            setSelection(text.length)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+        }
+        val padding = (20 * resources.displayMetrics.density).toInt()
+        val container = android.widget.FrameLayout(this).apply {
+            setPadding(padding, padding / 2, padding, 0)
+            addView(input)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("Renommer")
+            .setView(container)
+            .setPositiveButton("OK") { _, _ ->
+                val name = ExtractService.sanitize(input.text.toString())
+                if (name.isNotEmpty() && name != track.title) withFileAccess(track) { rename(track, name) }
+            }
+            .setNegativeButton("Annuler", null)
+            .show()
+    }
+
+    private fun askDelete(track: Track) {
+        AlertDialog.Builder(this)
+            .setTitle("Supprimer ce morceau ?")
+            .setMessage("${track.title}.mp3\n\nLe fichier sera effacé du téléphone.")
+            .setPositiveButton("Supprimer") { _, _ -> withFileAccess(track) { delete(track) } }
+            .setNegativeButton("Annuler", null)
+            .show()
+    }
+
+    private fun rename(track: Track, name: String) {
+        val values = ContentValues().apply { put(MediaStore.MediaColumns.DISPLAY_NAME, "$name.mp3") }
+        contentResolver.update(track.uri, values, null, null)
+        toast("Renommé : $name")
+        loadLibrary()
+    }
+
+    private fun delete(track: Track) {
+        // Morceau en cours : on passe au suivant (ou on arrête s'il était seul).
+        if (PlayerState.current.track?.uri == track.uri) {
+            val service = PlayerService.instance
+            if (PlayerState.current.queue.size > 1) service?.next() else service?.stopPlayback()
+        }
+        contentResolver.delete(track.uri, null, null)
+        PlayerState.update { s ->
+            val queue = s.queue.filter { it.uri != track.uri }
+            val index = s.track?.let { t -> queue.indexOfFirst { it.uri == t.uri } } ?: -1
+            s.copy(queue = queue, index = index)
+        }
+        toast("Supprimé.")
+        loadLibrary()
+    }
+
+    /**
+     * Exécute [action] ; si Android demande l'accord de l'utilisateur pour ce fichier
+     * (cas d'un MP3 créé avant une réinstallation de l'appli), on le demande puis on recommence.
+     */
+    private fun withFileAccess(track: Track, action: () -> Unit) {
+        try {
+            action()
+        } catch (e: RecoverableSecurityException) {
+            pendingFileAction = action
+            startIntentSenderForResult(e.userAction.actionIntent.intentSender, REQUEST_PERMISSION, null, 0, 0, 0)
+        } catch (e: Exception) {
+            toast("Impossible de modifier « ${track.title} ».")
+        }
+    }
+
+    @Deprecated("Activity framework")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_PERMISSION) {
+            val action = pendingFileAction
+            pendingFileAction = null
+            if (resultCode == RESULT_OK && action != null) {
+                try {
+                    action()
+                } catch (_: Exception) {
+                    toast("Impossible de modifier ce fichier.")
+                }
+            }
+        }
+    }
+
+    private fun toast(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
 
     // ---------------------------------------------------------------- liste
 

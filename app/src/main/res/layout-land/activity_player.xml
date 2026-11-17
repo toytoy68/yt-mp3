@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/chassis"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <!-- ===== Barre de titre ===== -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/back"
+            android:layout_width="36dp"
+            android:layout_height="28dp"
+            android:background="@drawable/retro_button"
+            android:contentDescription="@string/back"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_prev"
+            android:tint="@color/label" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/title_stripes" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/vt323"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:text="@string/player_title"
+            android:textColor="@color/amber"
+            android:textSize="22sp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="16dp"
+            android:layout_weight="1"
+            android:background="@drawable/title_stripes" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <ScrollView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1.2">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+            <!-- ===== Panneau principal ===== -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/retro_panel"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <!-- Écran : temps + spectre -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="84dp"
+                    android:background="@drawable/retro_sunken"
+                    android:orientation="horizontal"
+                    android:padding="6dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/stateIcon"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/vt323"
+                            android:textColor="@color/lcd_green"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/vt323"
+                            android:includeFontPadding="false"
+                            android:shadowColor="@color/lcd_green"
+                            android:shadowRadius="10"
+                            android:text="@string/time_zero"
+                            android:textColor="@color/lcd_green"
+                            android:textSize="50sp" />
+                    </LinearLayout>
+
+                    <fr.perso.ytmp3.player.SpectrumView
+                        android:id="@+id/spectrum"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="10dp"
+                        android:layout_weight="1" />
+                </LinearLayout>
+
+                <!-- Titre défilant -->
+                <fr.perso.ytmp3.player.MarqueeView
+                    android:id="@+id/marquee"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/retro_sunken"
+                    android:paddingStart="8dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="2dp" />
+
+                <!-- Infos techniques -->
+                <TextView
+                    android:id="@+id/info"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/vt323"
+                    android:textColor="@color/label"
+                    android:textSize="16sp" />
+
+                <!-- Position dans le morceau -->
+                <SeekBar
+                    android:id="@+id/seek"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:max="1000"
+                    android:progressDrawable="@drawable/seek_progress"
+                    android:splitTrack="false"
+                    android:thumb="@drawable/seek_thumb" />
+
+                <!-- Boutons de lecture -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageButton
+                        android:id="@+id/prev"
+                        style="@style/RetroTransport"
+                        android:contentDescription="@string/prev"
+                        android:src="@drawable/ic_prev" />
+
+                    <ImageButton
+                        android:id="@+id/play"
+                        style="@style/RetroTransport"
+                        android:contentDescription="@string/play"
+                        android:src="@drawable/ic_play" />
+
+                    <ImageButton
+                        android:id="@+id/pause"
+                        style="@style/RetroTransport"
+                        android:contentDescription="@string/pause"
+                        android:src="@drawable/ic_pause" />
+
+                    <ImageButton
+                        android:id="@+id/stop"
+                        style="@style/RetroTransport"
+                        android:contentDescription="@string/stop"
+                        android:src="@drawable/ic_stop" />
+
+                    <ImageButton
+                        android:id="@+id/next"
+                        style="@style/RetroTransport"
+                        android:contentDescription="@string/next"
+                        android:src="@drawable/ic_next" />
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1" />
+
+                    <ImageButton
+                        android:id="@+id/shuffle"
+                        style="@style/RetroToggleIcon"
+                        android:contentDescription="@string/shuffle"
+                        android:src="@drawable/ic_shuffle" />
+
+                    <ImageButton
+                        android:id="@+id/repeat"
+                        style="@style/RetroToggleIcon"
+                        android:contentDescription="@string/repeat"
+                        android:src="@drawable/ic_repeat" />
+                </LinearLayout>
+
+                <!-- Volume + interrupteurs -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/vt323"
+                        android:text="@string/vol"
+                        android:textColor="@color/label"
+                        android:textSize="18sp" />
+
+                    <SeekBar
+                        android:id="@+id/volume"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:max="100"
+                        android:progressDrawable="@drawable/seek_progress"
+                        android:splitTrack="false"
+                        android:thumb="@drawable/seek_thumb" />
+
+                    <TextView
+                        android:id="@+id/eqToggle"
+                        style="@style/RetroToggleText"
+                        android:text="@string/eq_short" />
+
+                    <TextView
+                        android:id="@+id/listToggle"
+                        style="@style/RetroToggleText"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/list_short" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- ===== Égaliseur ===== -->
+            <LinearLayout
+                android:id="@+id/eqPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/retro_panel"
+                android:orientation="vertical"
+                android:padding="8dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="@font/vt323"
+                        android:text="@string/equalizer"
+                        android:textColor="@color/amber"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/eqOn"
+                        style="@style/RetroToggleText"
+                        android:text="@string/eq_on" />
+
+                    <TextView
+                        android:id="@+id/eqReset"
+                        style="@style/RetroToggleText"
+                        android:layout_marginStart="6dp"
+                        android:text="@string/eq_reset"
+                        android:textColor="@color/label" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/eqMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:fontFamily="@font/vt323"
+                    android:textColor="@color/label"
+                    android:textSize="17sp"
+                    android:visibility="gone" />
+
+                <fr.perso.ytmp3.player.EqView
+                    android:id="@+id/eq"
+                    android:layout_width="match_parent"
+                    android:layout_height="150dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/retro_sunken"
+                    android:padding="4dp" />
+            </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- ===== Liste de lecture ===== -->
+        <LinearLayout
+            android:id="@+id/listPanel"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:background="@drawable/retro_panel"
+            android:orientation="vertical"
+            android:padding="8dp">
+
+            <TextView
+                android:id="@+id/listHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/vt323"
+                android:text="@string/playlist"
+                android:textColor="@color/amber"
+                android:textSize="20sp" />
+
+            <ListView
+                android:id="@+id/list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/retro_sunken"
+                android:divider="@null"
+                android:padding="4dp" />
+
+            <TextView
+                android:id="@+id/listEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fontFamily="@font/vt323"
+                android:gravity="center"
+                android:padding="16dp"
+                android:text="@string/playlist_empty"
+                android:textColor="@color/lcd_dim"
+                android:textSize="20sp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

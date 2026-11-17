@@ -13,6 +13,8 @@ Colle le lien d'une vidéo (ou partage-la depuis l'appli YouTube), choisis le no
   analyseur de spectre calculé depuis le fichier (aucune autorisation micro),
   égaliseur, aléatoire / répétition, liste de lecture, lecture en arrière-plan
   avec commandes sur l'écran verrouillé
+- Appui long sur un morceau : renommer / supprimer ; disposition paysage sur deux colonnes ;
+  écran maintenu allumé pendant la lecture
 - « Écouter » ouvre le lecteur intégré (appui long : choisir une autre appli)
 - Android 10 ou plus récent
 

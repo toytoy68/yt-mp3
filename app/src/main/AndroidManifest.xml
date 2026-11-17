@@ -44,7 +44,6 @@
         <!-- Lecteur rétro -->
         <activity
             android:name=".player.PlayerActivity"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:exported="false"
             android:launchMode="singleTop"
             android:theme="@style/PlayerTheme" />

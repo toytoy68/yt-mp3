@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
 import fr.perso.ytmp3.R
@@ -211,5 +212,70 @@ class EqView @JvmOverloads constructor(
             }
         }
         return true
+    }
+}
+
+/** Titre qui défile en continu (même s'il est court), comme sur les vieux lecteurs. */
+class MarqueeView @JvmOverloads constructor(
+    context: Context, attrs: AttributeSet? = null,
+) : View(context, attrs) {
+
+    private val density = resources.displayMetrics.density
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = context.getColor(R.color.lcd_green)
+        textSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 22f, resources.displayMetrics)
+        typeface = try {
+            resources.getFont(R.font.vt323)
+        } catch (_: Exception) {
+            Typeface.MONOSPACE
+        }
+    }
+    private var text = ""
+    private var textWidth = 0f
+    private var offset = 0f
+    private var lastFrame = 0L
+
+    /** Vitesse de défilement en dp par seconde. */
+    private val speed = 40f
+
+    fun setText(value: String) {
+        if (value == text) return
+        text = value
+        textWidth = paint.measureText(text)
+        offset = 0f
+        invalidate()
+    }
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val fm = paint.fontMetrics
+        val h = (fm.descent - fm.ascent + paddingTop + paddingBottom).toInt()
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), resolveSize(h, heightMeasureSpec))
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        if (text.isEmpty()) return
+        val now = System.nanoTime()
+        if (lastFrame != 0L) offset += (now - lastFrame) / 1e9f * speed * density
+        lastFrame = now
+
+        val gap = 48 * density
+        val cycle = textWidth + gap
+        if (offset >= cycle) offset -= cycle
+
+        val baseline = paddingTop - paint.fontMetrics.ascent
+        canvas.save()
+        canvas.clipRect(paddingLeft, 0, width - paddingRight, height)
+        var x = paddingLeft - offset
+        while (x < width) {
+            canvas.drawText(text, x, baseline, paint)
+            x += cycle
+        }
+        canvas.restore()
+        postInvalidateOnAnimation()
+    }
+
+    override fun onDetachedFromWindow() {
+        lastFrame = 0L
+        super.onDetachedFromWindow()
     }
 }

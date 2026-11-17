@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="RetroTransport">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_marginEnd">4dp</item>
+        <item name="android:background">@drawable/retro_button</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:tint">@color/label</item>
+    </style>
+
+    <style name="RetroToggleIcon">
+        <item name="android:layout_width">40dp</item>
+        <item name="android:layout_height">34dp</item>
+        <item name="android:layout_marginStart">4dp</item>
+        <item name="android:background">@drawable/retro_button</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:padding">7dp</item>
+        <item name="android:tint">@color/lcd_dim</item>
+    </style>
+
+    <style name="RetroToggleText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/retro_button</item>
+        <item name="android:fontFamily">@font/vt323</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingTop">3dp</item>
+        <item name="android:paddingBottom">3dp</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/lcd_dim</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+</resources>

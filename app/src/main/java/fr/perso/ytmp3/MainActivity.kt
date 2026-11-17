@@ -22,6 +22,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.yausername.youtubedl_android.YoutubeDL
 import fr.perso.ytmp3.JobState.Phase
+import fr.perso.ytmp3.player.PlayerActivity
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -91,7 +92,13 @@ class MainActivity : Activity() {
         fetchTitleButton.setOnClickListener { fetchTitle(force = true) }
         extractButton.setOnClickListener { startExtraction() }
         cancelButton.setOnClickListener { ExtractService.cancel() }
-        openButton.setOnClickListener { openLastFile() }
+        // « Écouter » : lecteur intégré. Appui long : choisir une autre appli.
+        openButton.setOnClickListener { JobState.current.savedUri?.let { PlayerActivity.open(this, it) } }
+        openButton.setOnLongClickListener {
+            openLastFile()
+            true
+        }
+        findViewById<Button>(R.id.openPlayer).setOnClickListener { PlayerActivity.open(this) }
         updateButton.setOnClickListener { updateEngine() }
 
         // Dès qu'un lien est collé ou tapé, on analyse la vidéo en arrière-plan.

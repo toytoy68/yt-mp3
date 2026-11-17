@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rayures de la barre de titre (la vue fait 16dp de haut) -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:gravity="top|fill_horizontal" android:height="2dp" android:top="2dp"><shape><solid android:color="#996B15" /></shape></item>
+    <item android:gravity="top|fill_horizontal" android:height="2dp" android:top="7dp"><shape><solid android:color="@color/amber" /></shape></item>
+    <item android:gravity="top|fill_horizontal" android:height="2dp" android:top="12dp"><shape><solid android:color="#996B15" /></shape></item>
+</layer-list>

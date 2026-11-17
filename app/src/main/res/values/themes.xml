@@ -2,5 +2,12 @@
 <resources>
     <!-- Thème natif du téléphone, clair ou sombre selon le réglage système -->
     <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.DayNight" />
+    <!-- Lecteur rétro : toujours sombre, sans barre de titre système -->
+    <style name="PlayerTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/chassis</item>
+        <item name="android:statusBarColor">@color/chassis</item>
+        <item name="android:navigationBarColor">@color/chassis</item>
+        <item name="android:colorAccent">@color/amber</item>
+    </style>
     <color name="icon_background">#D32F2F</color>
 </resources>

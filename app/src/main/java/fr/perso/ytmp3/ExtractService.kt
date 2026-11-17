@@ -19,6 +19,7 @@ import android.provider.MediaStore
 import com.yausername.youtubedl_android.YoutubeDL
 import com.yausername.youtubedl_android.YoutubeDLRequest
 import fr.perso.ytmp3.JobState.Phase
+import fr.perso.ytmp3.player.PlayerActivity
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
@@ -370,11 +371,11 @@ class ExtractService : Service() {
     }
 
     private fun notifyFinished(title: String, text: String, fileUri: Uri?) {
-        // Toucher la notification : choix de l'appli pour écouter si réussi, sinon ouvre YT MP3.
+        // Toucher la notification : écoute dans le lecteur intégré si réussi, sinon ouvre YT MP3.
         val tapIntent = if (fileUri != null) {
             PendingIntent.getActivity(
                 this, 2,
-                listenChooser(fileUri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                PlayerActivity.intent(this, fileUri),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
         } else openAppIntent()

@@ -21,4 +21,24 @@
     <string name="label_download">Téléchargement</string>
     <string name="label_convert">Conversion MP3</string>
     <string name="background_hint">Tu peux changer d\'appli : l\'extraction continue (voir la notification).</string>
+    <!-- Lecteur rétro -->
+    <string name="open_player">♫ Ouvrir le lecteur</string>
+    <string name="player_title">YT MP3 · LECTEUR</string>
+    <string name="time_zero">00:00</string>
+    <string name="back">Retour</string>
+    <string name="prev">Précédent</string>
+    <string name="play">Lecture</string>
+    <string name="pause">Pause</string>
+    <string name="stop">Arrêt</string>
+    <string name="next">Suivant</string>
+    <string name="shuffle">Aléatoire</string>
+    <string name="repeat">Répéter</string>
+    <string name="vol">VOL</string>
+    <string name="eq_short">ÉGAL</string>
+    <string name="list_short">LISTE</string>
+    <string name="equalizer">ÉGALISEUR</string>
+    <string name="eq_on">ACTIF</string>
+    <string name="eq_reset">RAZ</string>
+    <string name="playlist">LISTE DE LECTURE</string>
+    <string name="playlist_empty">Aucun MP3 pour l\'instant.\nExtrais une vidéo et elle apparaîtra ici.</string>
 </resources>

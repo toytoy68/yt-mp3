@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Palette du lecteur rétro (originale) -->
+    <color name="chassis">#15161D</color>
+    <color name="panel">#2B2E3B</color>
+    <color name="panel_pressed">#22242F</color>
+    <color name="bevel_light">#5A6078</color>
+    <color name="bevel_dark">#0B0C11</color>
+    <color name="lcd_bg">#030A05</color>
+    <color name="lcd_green">#3DFF72</color>
+    <color name="lcd_dim">#145C28</color>
+    <color name="amber">#FFB224</color>
+    <color name="label">#AEB4C8</color>
+    <color name="select_bg">#1C3C8C</color>
+</resources>

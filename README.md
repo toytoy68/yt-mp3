@@ -9,7 +9,11 @@ Colle le lien d'une vidéo (ou partage-la depuis l'appli YouTube), choisis le no
 - Continue en arrière-plan (notification avec progression et bouton Annuler)
 - « Partager → YT MP3 » depuis l'appli YouTube
 - Mise à jour du moteur yt-dlp par bouton (pas de mise à jour automatique)
-- « Écouter » propose de choisir l'appli de lecture
+- **Lecteur rétro intégré** (look original années 90) : afficheur LCD, titre défilant,
+  analyseur de spectre calculé depuis le fichier (aucune autorisation micro),
+  égaliseur, aléatoire / répétition, liste de lecture, lecture en arrière-plan
+  avec commandes sur l'écran verrouillé
+- « Écouter » ouvre le lecteur intégré (appui long : choisir une autre appli)
 - Android 10 ou plus récent
 
 Basée sur [youtubedl-android](https://github.com/JunkFood02/youtubedl-android) (yt-dlp + ffmpeg embarqués).
@@ -41,3 +45,6 @@ Play Protect signale l'appli comme dangereuse, comme tous les téléchargeurs Yo
 Appuie sur **Mettre à jour le moteur** : YouTube change régulièrement et yt-dlp suit rapidement.
 
 À réserver aux contenus dont tu as les droits ou sous licence libre.
+
+## Crédits
+Police d'affichage : VT323 (SIL Open Font License 1.1, voir `licenses/VT323-OFL.txt`).

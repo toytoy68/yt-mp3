@@ -12,7 +12,7 @@ android {
         minSdk = 29          // Android 10 et plus
         targetSdk = 34
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "1.1"
+        versionName = "1.2"
 
         // Téléphones ARM 64 et 32 bits (quasiment tous les téléphones Android)
         ndk {

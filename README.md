@@ -2,12 +2,14 @@
 
 Colle le lien d'une vidéo (ou partage-la depuis l'appli YouTube), choisis le nom du fichier, et récupère la piste en MP3 dans **Musique/YtMp3**.
 
-- Nom du fichier modifiable avant la création (vide = titre de la vidéo, bouton « Utiliser le titre de la vidéo » pour le pré-remplir)
+- Titre récupéré automatiquement dès que le lien est collé, nom modifiable avant la création
+- Vidéo analysée une seule fois : l'extraction démarre tout de suite
 - Qualité 128 / 192 / 320 kbps
 - Barres d'avancement du téléchargement et de la conversion MP3
 - Continue en arrière-plan (notification avec progression et bouton Annuler)
 - « Partager → YT MP3 » depuis l'appli YouTube
-- Mise à jour automatique du moteur yt-dlp (1×/jour) + bouton manuel
+- Mise à jour du moteur yt-dlp par bouton (pas de mise à jour automatique)
+- « Écouter » propose de choisir l'appli de lecture
 - Android 10 ou plus récent
 
 Basée sur [youtubedl-android](https://github.com/JunkFood02/youtubedl-android) (yt-dlp + ffmpeg embarqués).
@@ -31,6 +33,9 @@ Basée sur [youtubedl-android](https://github.com/JunkFood02/youtubedl-android) 
 
 ## Installer sur le téléphone
 Copie l'APK sur le téléphone, ouvre-le, et autorise « Installer des applis inconnues » pour l'appli qui l'ouvre (Fichiers, Chrome…).
+
+## Play Protect
+Play Protect signale l'appli comme dangereuse, comme tous les téléchargeurs YouTube installés hors Play Store. Le code complet est dans ce dépôt.
 
 ## Si un téléchargement échoue
 Appuie sur **Mettre à jour le moteur** : YouTube change régulièrement et yt-dlp suit rapidement.

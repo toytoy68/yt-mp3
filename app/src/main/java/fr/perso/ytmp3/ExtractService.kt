@@ -70,6 +70,18 @@ class ExtractService : Service() {
                 .trimEnd('.')
                 .take(150)
 
+        /**
+         * « Écouter avec… » : on demande toujours quelle appli utiliser, pour ne pas
+         * faire du lecteur par défaut le « dernier lecteur actif » d'Android
+         * (qui se relancerait ensuite tout seul aux signaux lecture/pause).
+         */
+        fun listenChooser(fileUri: Uri): Intent {
+            val view = Intent(Intent.ACTION_VIEW)
+                .setDataAndType(fileUri, "audio/mpeg")
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            return Intent.createChooser(view, "Écouter avec…")
+        }
+
         /** Garde la ligne utile d'un message d'erreur yt-dlp (souvent très long). */
         fun shortError(e: Exception): String {
             val lines = (e.message ?: e.javaClass.simpleName)
@@ -145,38 +157,30 @@ class ExtractService : Service() {
         try {
             Engine.ensureInit(this)
 
-            // Infos de la vidéo : titre (pour le nom) et durée (pour la barre de conversion).
-            setState(Phase.PREPARING, "Récupération des infos de la vidéo…")
-            val info = YoutubeDL.getInstance().getInfo(url)
+            // Infos de la vidéo : déjà analysée en général (dès que le lien a été collé).
+            setState(Phase.PREPARING, "Analyse de la vidéo…")
+            val meta = InfoCache.get(this, url)
             var name = sanitize(requestedName)
-            if (name.isEmpty()) name = sanitize(info.title ?: "")
+            if (name.isEmpty()) name = sanitize(meta.title)
             if (name.isEmpty()) name = "audio_${System.currentTimeMillis()}"
-            val durationSec = info.duration
+            val durationSec = meta.durationSec
             val finalName = name
             JobState.update { it.copy(fileName = finalName) }
-
-            tmpDir.deleteRecursively()
-            tmpDir.mkdirs()
-
-            val request = YoutubeDLRequest(url).apply {
-                addOption("--no-playlist")
-                addOption("-x")
-                addOption("--audio-format", "mp3")
-                addOption("--audio-quality", "${kbps}K")
-                addOption("--embed-metadata")
-                // ffmpeg écrit son avancement dans ce fichier, qu'on lit en parallèle.
-                addOption("--postprocessor-args", "ExtractAudio:-progress ${progressFile.absolutePath}")
-                addOption("-o", File(tmpDir, "audio.%(ext)s").absolutePath)
-            }
 
             poller.scheduleWithFixedDelay(
                 { readConversionProgress(progressFile, durationSec) },
                 500, 500, TimeUnit.MILLISECONDS
             )
 
-            setState(Phase.DOWNLOADING, "Téléchargement…")
-            YoutubeDL.getInstance().execute(request, PROCESS_ID) { progress, _, line ->
-                onYtdlpOutput(progress, line, durationSec)
+            try {
+                // Rapide : réutilise l'analyse au lieu de la refaire.
+                download(tmpDir, progressFile, kbps, durationSec, listOf("--load-info-json", meta.jsonFile.absolutePath), emptyList())
+            } catch (e: YoutubeDL.CanceledException) {
+                throw e
+            } catch (e: Exception) {
+                // Analyse périmée (liens expirés…) : on repart du lien directement.
+                InfoCache.invalidate(url)
+                download(tmpDir, progressFile, kbps, durationSec, listOf("--no-playlist"), listOf(url))
             }
             poller.shutdownNow()
 
@@ -212,6 +216,35 @@ class ExtractService : Service() {
             releaseWakeLock()
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
+        }
+    }
+
+    private fun download(
+        tmpDir: File,
+        progressFile: File,
+        kbps: Int,
+        durationSec: Int,
+        source: List<String>,
+        urls: List<String>,
+    ) {
+        tmpDir.deleteRecursively()
+        tmpDir.mkdirs()
+
+        val request = YoutubeDLRequest(urls).apply {
+            addCommands(source)
+            addOption("-x")
+            addOption("--audio-format", "mp3")
+            addOption("--audio-quality", "${kbps}K")
+            addOption("--embed-metadata")
+            // ffmpeg écrit son avancement dans ce fichier, qu'on lit en parallèle.
+            addOption("--postprocessor-args", "ExtractAudio:-progress ${progressFile.absolutePath}")
+            addOption("-o", File(tmpDir, "audio.%(ext)s").absolutePath)
+        }
+
+        JobState.update { it.copy(phase = Phase.DOWNLOADING, downloadPct = 0f, convertPct = 0f, message = "Téléchargement…") }
+        notifyProgress(force = true)
+        YoutubeDL.getInstance().execute(request, PROCESS_ID) { progress, _, line ->
+            onYtdlpOutput(progress, line, durationSec)
         }
     }
 
@@ -337,13 +370,11 @@ class ExtractService : Service() {
     }
 
     private fun notifyFinished(title: String, text: String, fileUri: Uri?) {
-        // Toucher la notification : écoute le MP3 si réussi, sinon ouvre l'appli.
+        // Toucher la notification : choix de l'appli pour écouter si réussi, sinon ouvre YT MP3.
         val tapIntent = if (fileUri != null) {
             PendingIntent.getActivity(
                 this, 2,
-                Intent(Intent.ACTION_VIEW)
-                    .setDataAndType(fileUri, "audio/mpeg")
-                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK),
+                listenChooser(fileUri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
         } else openAppIntent()

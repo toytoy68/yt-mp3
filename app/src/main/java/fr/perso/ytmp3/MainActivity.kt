@@ -11,6 +11,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -29,7 +31,8 @@ class MainActivity : Activity() {
         private const val PREFS = "ytmp3"
         private const val KEY_LAST_UPDATE = "last_engine_update"
         private const val KEY_ASKED_NOTIF = "asked_notifications"
-        private const val UPDATE_INTERVAL_MS = 24L * 60 * 60 * 1000 // 1 jour
+        private const val STALE_ENGINE_DAYS = 30L
+        private const val AUTO_FETCH_DELAY_MS = 700L
 
         private val URL_REGEX = Regex("""https?://\S+""")
     }
@@ -39,6 +42,11 @@ class MainActivity : Activity() {
     private val mainHandler = Handler(Looper.getMainLooper())
 
     private var busyCount = 0
+    /** Lien dont on a déjà lancé l'analyse automatique. */
+    private var lastAnalyzedUrl: String? = null
+    /** Nom rempli automatiquement (pour savoir si l'utilisateur l'a modifié). */
+    private var autoFilledName: String? = null
+    private val autoFetch = Runnable { onUrlChanged() }
     private val jobListener: (JobState.Snapshot) -> Unit = { render(it) }
 
     private lateinit var urlInput: EditText
@@ -80,11 +88,21 @@ class MainActivity : Activity() {
         convertPct = findViewById(R.id.convertPct)
 
         pasteButton.setOnClickListener { pasteFromClipboard() }
-        fetchTitleButton.setOnClickListener { fetchTitle() }
+        fetchTitleButton.setOnClickListener { fetchTitle(force = true) }
         extractButton.setOnClickListener { startExtraction() }
         cancelButton.setOnClickListener { ExtractService.cancel() }
         openButton.setOnClickListener { openLastFile() }
         updateButton.setOnClickListener { updateEngine() }
+
+        // Dès qu'un lien est collé ou tapé, on analyse la vidéo en arrière-plan.
+        urlInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                mainHandler.removeCallbacks(autoFetch)
+                mainHandler.postDelayed(autoFetch, AUTO_FETCH_DELAY_MS)
+            }
+        })
 
         initEngine()
         handleShareIntent(intent)
@@ -123,7 +141,6 @@ class MainActivity : Activity() {
         worker.execute {
             val message = try {
                 Engine.ensureInit(this)
-                autoUpdateIfNeeded()
                 "Prêt."
             } catch (e: Exception) {
                 "Erreur d'initialisation : ${ExtractService.shortError(e)}"
@@ -132,20 +149,6 @@ class MainActivity : Activity() {
                 showEngineVersion()
                 end(message)
             }
-        }
-    }
-
-    /** YouTube change souvent : on met yt-dlp à jour au plus une fois par jour. */
-    private fun autoUpdateIfNeeded() {
-        val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
-        val now = System.currentTimeMillis()
-        if (now - prefs.getLong(KEY_LAST_UPDATE, 0L) < UPDATE_INTERVAL_MS) return
-        ui { statusText.text = "Recherche de mise à jour du moteur…" }
-        try {
-            YoutubeDL.getInstance().updateYoutubeDL(applicationContext)
-            prefs.edit().putLong(KEY_LAST_UPDATE, now).apply()
-        } catch (_: Exception) {
-            // Pas grave (pas de réseau…) : on réessaiera au prochain lancement.
         }
     }
 
@@ -178,7 +181,12 @@ class MainActivity : Activity() {
         } catch (_: Exception) {
             null
         }
-        engineVersionText.text = "Version du moteur yt-dlp : ${version ?: "inconnue"}"
+        val lastUpdate = getSharedPreferences(PREFS, MODE_PRIVATE).getLong(KEY_LAST_UPDATE, 0L)
+        val days = (System.currentTimeMillis() - lastUpdate) / (24L * 60 * 60 * 1000)
+        val hint = if (lastUpdate == 0L || days >= STALE_ENGINE_DAYS) {
+            "\n⚠️ Pas mis à jour depuis longtemps : pense à « Mettre à jour le moteur »."
+        } else ""
+        engineVersionText.text = "Version du moteur yt-dlp : ${version ?: "inconnue"}$hint"
     }
 
     // ---------------------------------------------------------------- entrées
@@ -187,9 +195,9 @@ class MainActivity : Activity() {
         if (intent?.action != Intent.ACTION_SEND) return
         val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
         val url = URL_REGEX.find(text)?.value ?: return
-        urlInput.setText(url)
         filenameInput.setText("")
-        fetchTitle()
+        autoFilledName = null
+        urlInput.setText(url) // déclenche l'analyse automatique
     }
 
     private fun pasteFromClipboard() {
@@ -215,23 +223,46 @@ class MainActivity : Activity() {
 
     // ---------------------------------------------------------------- actions
 
-    private fun fetchTitle() {
-        val url = currentUrl() ?: return
-        begin("Récupération du titre…")
+    /** Le lien a changé : on lance l'analyse (titre + infos) sans bloquer l'écran. */
+    private fun onUrlChanged() {
+        val url = URL_REGEX.find(urlInput.text.toString())?.value ?: return
+        if (url == lastAnalyzedUrl) return
+        lastAnalyzedUrl = url
+        // L'ancien titre automatique ne correspond plus à ce lien.
+        if (filenameInput.text.toString() == autoFilledName) filenameInput.setText("")
+        fetchTitle(force = false)
+    }
+
+    /**
+     * Récupère le titre. force = bouton « Utiliser le titre » : remplace le nom.
+     * Sinon on ne remplit le nom que s'il est vide ou rempli automatiquement.
+     */
+    private fun fetchTitle(force: Boolean) {
+        val url = (if (force) currentUrl() else URL_REGEX.find(urlInput.text.toString())?.value) ?: return
+        lastAnalyzedUrl = url
+        if (!JobState.current.running) statusText.text = "Analyse de la vidéo…"
+        InfoCache.prefetch(this, url)
         worker.execute {
             val message = try {
-                Engine.ensureInit(this)
-                val title = YoutubeDL.getInstance().getInfo(url).title
-                if (title.isNullOrBlank()) {
+                val title = InfoCache.get(this, url).title
+                if (title.isBlank()) {
                     "Cette vidéo n'a pas de titre : choisis un nom."
                 } else {
-                    ui { filenameInput.setText(ExtractService.sanitize(title)) }
+                    val clean = ExtractService.sanitize(title)
+                    ui {
+                        val current = filenameInput.text.toString()
+                        val stillSameUrl = URL_REGEX.find(urlInput.text.toString())?.value == url
+                        if (stillSameUrl && (force || current.isBlank() || current == autoFilledName)) {
+                            autoFilledName = clean
+                            filenameInput.setText(clean)
+                        }
+                    }
                     "Titre récupéré. Tu peux modifier le nom avant d'extraire."
                 }
             } catch (e: Exception) {
-                "Impossible de récupérer le titre : ${ExtractService.shortError(e)}"
+                "Impossible d'analyser la vidéo : ${ExtractService.shortError(e)}"
             }
-            ui { end(message) }
+            ui { if (!JobState.current.running) statusText.text = message }
         }
     }
 
@@ -243,6 +274,7 @@ class MainActivity : Activity() {
             R.id.q320 -> 320
             else -> 192
         }
+        InfoCache.prefetch(this, url) // au cas où le lien vient d'être collé
         askNotificationPermissionOnce()
         ExtractService.start(this, url, ExtractService.sanitize(filenameInput.text.toString()), kbps)
     }
@@ -259,11 +291,8 @@ class MainActivity : Activity() {
 
     private fun openLastFile() {
         val uri: Uri = JobState.current.savedUri ?: return
-        val intent = Intent(Intent.ACTION_VIEW)
-            .setDataAndType(uri, "audio/mpeg")
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         try {
-            startActivity(intent)
+            startActivity(ExtractService.listenChooser(uri))
         } catch (_: ActivityNotFoundException) {
             toast("Aucune appli pour lire les MP3.")
         }
